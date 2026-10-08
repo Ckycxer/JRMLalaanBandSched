@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Church Band Schedule</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Poppins', sans-serif; background: #f8f9fc; min-height: 100vh; padding: 30px 20px; color: #1a2332; }
+h1 { text-align: center; font-size: 28px; font-weight: 800; color: #1a2744; margin-bottom: 4px; }
+.subtitle { text-align: center; color: #8a94a6; font-size: 13px; margin-bottom: 28px; font-weight: 300; }
+.controls { text-align: center; margin-bottom: 28px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.controls label { font-weight: 600; font-size: 13px; color: #5a6478; }
+.controls select, .controls input { padding: 10px 14px; border: 1px solid #e2e6ed; border-radius: 8px; font-size: 14px; background: #fff; color: #1a2744; font-family: 'Poppins', sans-serif; }
+.controls button { padding: 10px 18px; background: #1a2744; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; transition: transform 0.15s, box-shadow 0.15s; }
+.controls button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,39,68,0.25); }
+.controls button.print-btn { background: #1a2744; }
+.controls button.print-btn:hover { box-shadow: 0 6px 20px rgba(26,39,68,0.25); }
+.nav-btn { background: #c9952c !important; font-size: 16px !important; padding: 10px 16px !important; }
+.nav-btn:hover { box-shadow: 0 6px 20px rgba(201,149,44,0.3) !important; }
+
+.schedule-list { max-width: 950px; margin: 0 auto; }
+.sunday-card { background: #fff; border: 1px solid #e8ecf2; border-radius: 16px; margin-bottom: 28px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+.sunday-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(26,39,68,0.1); }
+.sunday-header { background: #1a2744; color: #fff; padding: 18px 28px; font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.sunday-header .week-label { font-size: 11px; opacity: 0.6; font-weight: 400; background: rgba(255,255,255,0.12); padding: 4px 10px; border-radius: 12px; }
+.services-row { display: grid; grid-template-columns: 1fr 1fr; }
+.service-col { padding: 22px 28px; }
+.service-col:first-child { border-right: 1px solid #e8ecf2; }
+.service-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e8ecf2; }
+.service-col:first-child .service-title { color: #1a2744; }
+.service-col:last-child .service-title { color: #c9952c; }
+.instrument-slot { margin: 5px 0; border-radius: 10px; background: #f8f9fc; border: 1px solid transparent; transition: all 0.2s; }
+.instrument-slot:hover { background: #eef1f7; border-color: #d4dae6; }
+.member-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.member-row .instrument-name { font-size: 12px; color: #8a94a6; min-width: 130px; font-weight: 400; }
+.member-row .person-name { font-size: 14px; font-weight: 600; color: #1a2744; }
+.member-row .person-name.trainee { color: #c9952c; }
+.member-row .swap-icon { font-size: 14px; color: #c8cdd6; opacity: 0; transition: all 0.2s; }
+.member-row:hover .swap-icon { opacity: 1; color: #1a2744; }
+.add-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; font-size: 14px; color: #c8cdd6; cursor: pointer; border-radius: 50%; transition: all 0.2s; opacity: 0; }
+.instrument-slot:hover .add-icon { opacity: 1; }
+.add-icon:hover { background: #1a2744; color: #fff; }
+.remove-icon { font-size: 11px; color: #e74c3c; cursor: pointer; opacity: 0; margin-left: 6px; transition: all 0.2s; }
+.instrument-slot:hover .remove-icon { opacity: 0.7; }
+.remove-icon:hover { opacity: 1 !important; }
+
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26,39,68,0.4); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; }
+.modal-overlay.active { display: flex; }
+.modal { background: #fff; border: 1px solid #e8ecf2; border-radius: 16px; padding: 28px; min-width: 360px; max-width: 440px; box-shadow: 0 20px 60px rgba(26,39,68,0.2); }
+.modal h3 { margin-bottom: 14px; color: #1a2744; font-size: 17px; font-weight: 700; }
+.modal-info { font-size: 13px; color: #8a94a6; margin-bottom: 18px; }
+.modal-info strong { color: #c9952c; }
+.modal-section { margin-bottom: 18px; }
+.modal-section h4 { font-size: 11px; color: #1a2744; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.modal-option { padding: 11px 16px; margin: 5px 0; border-radius: 8px; cursor: pointer; font-size: 14px; border: 1px solid #e8ecf2; transition: all 0.2s; color: #3a4560; }
+.modal-option:hover { background: #1a2744; color: #fff; border-color: #1a2744; transform: translateX(4px); }
+.modal-option.current { background: #eef1f7; border-color: #1a2744; font-weight: 600; color: #1a2744; }
+.modal-option .trainee-badge { font-size: 10px; color: #c9952c; margin-left: 6px; }
+.modal-option .sub-badge { font-size: 10px; color: #2e8b6e; margin-left: 6px; }
+.modal-option:hover .trainee-badge, .modal-option:hover .sub-badge { color: rgba(255,255,255,0.7); }
+.modal-close { margin-top: 16px; width: 100%; padding: 11px; background: #f8f9fc; border: 1px solid #e8ecf2; color: #5a6478; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
+.modal-close:hover { background: #e8ecf2; color: #1a2744; }
+.switch-btn { margin-top: 8px; width: 100%; padding: 11px; background: #c9952c; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
+.switch-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,149,44,0.3); }
+
+.legend { max-width: 950px; margin: 0 auto 20px; display: flex; gap: 20px; justify-content: center; font-size: 12px; color: #8a94a6; }
+.legend span { display: flex; align-items: center; gap: 6px; }
+.legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+.legend .dot.senior { background: #1a2744; }
+.legend .dot.trainee { background: #c9952c; }
+.legend .dot.sub { background: #2e8b6e; }
+
+@media print {
+  .controls, .modal-overlay, .legend { display: none !important; }
+  body { background: #fff; color: #000; padding: 10px; }
+  .sunday-card { background: #fff; border: 1px solid #ddd; backdrop-filter: none; page-break-inside: avoid; }
+  .sunday-header { background: #f5f5f5; color: #333; }
+  .service-title { color: #333 !important; }
+  .member-row .person-name { color: #333; }
+  .member-row .person-name.trainee { color: #e67e22; }
+  .member-row .swap-icon { display: none; }
+}
+@media (max-width: 600px) {
+  .services-row { grid-template-columns: 1fr; }
+  .service-col:first-child { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+}
+</style>
+</head>
+<body>
+<h1>🎵 Church Band Sunday Schedule</h1>
+<p class="subtitle">Two Services per Sunday — Fair Rotation • Click a name to swap</p>
+<div class="controls">
+  <button class="nav-btn" onclick="navMonth(-1)">◀</button>
+  <label>Month:</label>
+  <select id="monthSelect"></select>
+  <label>Year:</label>
+  <input type="number" id="yearInput" value="2025" min="2024" max="2030" style="width:80px">
+  <button onclick="generateSchedule()">Generate</button>
+  <button class="nav-btn" onclick="navMonth(1)">▶</button>
+  <button class="print-btn" onclick="window.print()">🖨 Print</button>
+</div>
+<div class="legend">
+  <span><span class="dot senior"></span> Senior</span>
+  <span><span class="dot trainee"></span> Trainee</span>
+  <span><span class="dot sub"></span> Substitute (Von / Christian)</span>
+</div>
+<div class="schedule-list" id="scheduleOutput"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const bandMembers = {
+  "Acoustic Guitar": ["Jiro", "Joy"],
+  "Electric Guitar": ["Rhodsam", "Erick", "Miguel"],
+  "Bass Guitar": ["Melvin", "Michael", "Philip"],
+  "Keyboard 1": ["Adrian", "Rachelle", "Faith"],
+  "Keyboard 2": ["Adrian", "Rachelle", "Faith"],
+  "Drums": ["Aries", "Rhodsam", "Michael", "Cyruz", "Matthew"]
+};
+
+const substitutes = {
+  "Acoustic Guitar": ["Von", "Christian"],
+  "Electric Guitar": ["Von", "Christian"],
+  "Bass Guitar": ["Von"],
+  "Keyboard 1": [],
+  "Keyboard 2": [],
+  "Drums": ["Von"]
+};
+
+const trainees = new Set(["Joy", "Faith", "Miguel", "Cyruz", "Philip", "Matthew"]);
+const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+let scheduleData = {};
+
+function saveSchedule() {
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  const key = `churchSchedule_${year}_${month}`;
+  localStorage.setItem(key, JSON.stringify(scheduleData));
+}
+
+function loadSchedule(year, month) {
+  const key = `churchSchedule_${year}_${month}`;
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    scheduleData = JSON.parse(saved);
+    return true;
+  }
+  return false;
+}
+
+const monthSelect = document.getElementById('monthSelect');
+months.forEach((m, i) => {
+  const opt = document.createElement('option');
+  opt.value = i; opt.textContent = m;
+  monthSelect.appendChild(opt);
+});
+monthSelect.value = new Date().getMonth();
+document.getElementById('yearInput').value = new Date().getFullYear();
+
+function navMonth(dir) {
+  let m = parseInt(monthSelect.value) + dir;
+  let y = parseInt(document.getElementById('yearInput').value);
+  if (m < 0) { m = 11; y--; }
+  if (m > 11) { m = 0; y++; }
+  monthSelect.value = m;
+  document.getElementById('yearInput').value = y;
+  generateScheduleIfNoSave();
+}
+
+function seededRandom(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xFFFFFFFF;
+    return (s >>> 0) / 0xFFFFFFFF;
+  };
+}
+
+function shuffle(arr, rng) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getSundays(year, month) {
+  const sundays = [];
+  const d = new Date(year, month, 1);
+  while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
+  while (d.getMonth() === month) {
+    sundays.push(new Date(d));
+    d.setDate(d.getDate() + 7);
+  }
+  return sundays;
+}
+
+function generateSchedule() {
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  const sundays = getSundays(year, month);
+  scheduleData = {};
+
+  const counters = {};
+  Object.keys(bandMembers).forEach(inst => { counters[inst] = 0; });
+
+  sundays.forEach((sunday, weekIdx) => {
+    const seed = year * 10000 + month * 100 + weekIdx;
+    const rng = seededRandom(seed);
+    const dateKey = sunday.getDate();
+    scheduleData[dateKey] = { 1: {}, 2: {} };
+
+    const usedThisSunday = new Set();
+    const instruments = Object.keys(bandMembers);
+
+    for (let svc = 1; svc <= 2; svc++) {
+      const usedThisService = new Set();
+      const maxTrainees = Math.ceil(instruments.length / 2);
+      const minTrainees = Math.floor(instruments.length / 2) - 1;
+      const maxSeniors = instruments.length - minTrainees;
+      let traineeCount = 0, seniorCount = 0;
+
+      instruments.forEach(inst => {
+        const members = bandMembers[inst];
+        const shuffled = shuffle(members, rng);
+        let assigned = null;
+        const needSenior = traineeCount >= maxTrainees;
+        const needTrainee = seniorCount >= maxSeniors;
+
+        for (let i = 0; i < members.length; i++) {
+          const candidate = shuffled[(counters[inst] + i) % members.length];
+          if (usedThisService.has(candidate) || usedThisSunday.has(candidate)) continue;
+          if (needSenior && trainees.has(candidate)) continue;
+          if (needTrainee && !trainees.has(candidate)) continue;
+          assigned = candidate;
+          break;
+        }
+        if (!assigned) {
+          for (let i = 0; i < members.length; i++) {
+            const candidate = shuffled[(counters[inst] + i) % members.length];
+            if (!usedThisService.has(candidate) && !usedThisSunday.has(candidate)) {
+              assigned = candidate;
+              break;
+            }
+          }
+        }
+        if (!assigned) {
+          for (let i = 0; i < members.length; i++) {
+            const candidate = shuffled[(counters[inst] + i) % members.length];
+            if (!usedThisService.has(candidate)) {
+              assigned = candidate;
+              break;
+            }
+          }
+        }
+        if (!assigned) assigned = shuffled[counters[inst] % members.length];
+
+        if (trainees.has(assigned)) traineeCount++;
+        else seniorCount++;
+        scheduleData[dateKey][svc][inst] = [assigned];
+        usedThisService.add(assigned);
+        usedThisSunday.add(assigned);
+        counters[inst]++;
+      });
+    }
+  });
+
+  saveSchedule();
+  renderSchedule(year, month);
+}
+
+function generateScheduleIfNoSave() {
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  if (loadSchedule(year, month)) {
+    renderSchedule(year, month);
+  } else {
+    generateSchedule();
+  }
+}
+
+function renderSchedule(year, month) {
+  const container = document.getElementById('scheduleOutput');
+  container.innerHTML = '';
+  const sundays = getSundays(year, month);
+
+  sundays.forEach((sunday, idx) => {
+    const day = sunday.getDate();
+    const dateStr = sunday.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const weekNum = idx + 1;
+
+    let html = `<div class="sunday-card">`;
+    html += `<div class="sunday-header"><span>${dateStr}</span><span class="week-label">Week ${weekNum}</span></div>`;
+    html += `<div class="services-row">`;
+
+    for (let svc = 1; svc <= 2; svc++) {
+      html += `<div class="service-col">`;
+      html += `<div class="service-title">Service ${svc}</div>`;
+      const assignments = scheduleData[day][svc];
+      Object.keys(assignments).forEach(inst => {
+        const names = assignments[inst];
+        html += `<div class="instrument-slot">`;
+        const nameDisplay = names.map((name, idx) => {
+          const isTrainee = trainees.has(name);
+          let part = `<span class="person-name${isTrainee ? ' trainee' : ''}" onclick="event.stopPropagation(); openSwapModal(${day}, ${svc}, '${inst}', ${idx})">${name}</span>`;
+          if (idx > 0) {
+            part += `<span class="remove-icon" onclick="event.stopPropagation(); removePlayer(${day}, ${svc}, '${inst}', ${idx})">✕</span>`;
+          }
+          return part;
+        }).join(' <span style="color:#8a94a6; font-size:12px;">+</span> ');
+        html += `<div class="member-row" onclick="openSwapModal(${day}, ${svc}, '${inst}', 0)">
+          <span class="instrument-name">${inst}</span>
+          <span style="display:flex;align-items:center;gap:4px;flex:1">${nameDisplay}</span>
+          <span class="add-icon" onclick="event.stopPropagation(); openAddModal(${day}, ${svc}, '${inst}')">＋</span>
+          <span class="swap-icon">⇄</span>
+        </div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+
+    html += `</div></div>`;
+    container.innerHTML += html;
+  });
+}
+
+function getUsedInService(day, svc) {
+  const used = new Set();
+  Object.values(scheduleData[day][svc]).forEach(names => {
+    names.forEach(n => used.add(n));
+  });
+  return used;
+}
+
+function openSwapModal(day, svc, inst, idx) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const current = scheduleData[day][svc][inst][idx];
+  const otherSvc = svc === 1 ? 2 : 1;
+  const otherMember = scheduleData[day][otherSvc][inst][0];
+  const available = bandMembers[inst];
+  const usedInService = getUsedInService(day, svc);
+
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  const dateStr = new Date(year, month, day).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+  const subs = substitutes[inst] || [];
+
+  let html = `<h3>⇄ Swap: ${inst}</h3>`;
+  html += `<div class="modal-info">${dateStr} • Service ${svc} • Currently: <strong>${current}</strong></div>`;
+
+  html += `<div class="modal-section"><h4>Regular Members</h4>`;
+  available.forEach(name => {
+    const isCurrent = name === current;
+    const inUse = !isCurrent && usedInService.has(name);
+    const badge = trainees.has(name) ? '<span class="trainee-badge">(trainee)</span>' : '';
+    if (inUse) {
+      html += `<div class="modal-option" style="opacity:0.3;cursor:not-allowed">${name} ${badge} — already in this service</div>`;
+    } else {
+      html += `<div class="modal-option${isCurrent ? ' current' : ''}" onclick="replaceMemberAt(${day}, ${svc}, '${inst}', ${idx}, '${name}')">${name} ${badge}${isCurrent ? ' ✓' : ''}</div>`;
+    }
+  });
+  html += '</div>';
+
+  if (subs.length > 0) {
+    html += `<div class="modal-section"><h4>Substitutes</h4>`;
+    subs.forEach(name => {
+      const isCurrent = name === current;
+      const inUse = !isCurrent && usedInService.has(name);
+      if (inUse) {
+        html += `<div class="modal-option" style="opacity:0.3;cursor:not-allowed">${name} <span class="sub-badge">(substitute)</span> — already in this service</div>`;
+      } else {
+        html += `<div class="modal-option${isCurrent ? ' current' : ''}" onclick="replaceMemberAt(${day}, ${svc}, '${inst}', ${idx}, '${name}')">${name} <span class="sub-badge">(substitute)</span>${isCurrent ? ' ✓' : ''}</div>`;
+      }
+    });
+    html += '</div>';
+  }
+
+  html += `<div class="modal-section"><h4>Switch with Service ${otherSvc}</h4>`;
+  html += `<button class="switch-btn" onclick="switchServices(${day}, '${inst}')">⇄ Switch ${current} with ${otherMember} (Svc ${otherSvc})</button>`;
+  html += '</div>';
+
+  html += `<button class="modal-close" onclick="closeModal()">Cancel</button>`;
+  modal.innerHTML = html;
+  overlay.classList.add('active');
+}
+
+function openAddModal(day, svc, inst) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  const available = bandMembers[inst];
+  const usedInService = getUsedInService(day, svc);
+
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  const dateStr = new Date(year, month, day).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+  const subs = substitutes[inst] || [];
+
+  let html = `<h3>＋ Add: ${inst}</h3>`;
+  html += `<div class="modal-info">${dateStr} • Service ${svc} • Add another player</div>`;
+
+  html += `<div class="modal-section"><h4>Regular Members</h4>`;
+  available.forEach(name => {
+    const inUse = usedInService.has(name);
+    const badge = trainees.has(name) ? '<span class="trainee-badge">(trainee)</span>' : '';
+    if (inUse) {
+      html += `<div class="modal-option" style="opacity:0.3;cursor:not-allowed">${name} ${badge} — already in this service</div>`;
+    } else {
+      html += `<div class="modal-option" onclick="addPlayer(${day}, ${svc}, '${inst}', '${name}')">${name} ${badge}</div>`;
+    }
+  });
+  html += '</div>';
+
+  if (subs.length > 0) {
+    html += `<div class="modal-section"><h4>Substitutes</h4>`;
+    subs.forEach(name => {
+      const inUse = usedInService.has(name);
+      if (inUse) {
+        html += `<div class="modal-option" style="opacity:0.3;cursor:not-allowed">${name} <span class="sub-badge">(substitute)</span> — already in this service</div>`;
+      } else {
+        html += `<div class="modal-option" onclick="addPlayer(${day}, ${svc}, '${inst}', '${name}')">${name} <span class="sub-badge">(substitute)</span></div>`;
+      }
+    });
+    html += '</div>';
+  }
+
+  html += `<button class="modal-close" onclick="closeModal()">Cancel</button>`;
+  modal.innerHTML = html;
+  overlay.classList.add('active');
+}
+
+function replaceMemberAt(day, svc, inst, idx, newName) {
+  scheduleData[day][svc][inst][idx] = newName;
+  closeModal();
+  saveSchedule();
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  renderSchedule(year, month);
+}
+
+function addPlayer(day, svc, inst, name) {
+  scheduleData[day][svc][inst].push(name);
+  closeModal();
+  saveSchedule();
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  renderSchedule(year, month);
+}
+
+function removePlayer(day, svc, inst, idx) {
+  scheduleData[day][svc][inst].splice(idx, 1);
+  saveSchedule();
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  renderSchedule(year, month);
+}
+
+function switchServices(day, inst) {
+  const tmp = scheduleData[day][1][inst];
+  scheduleData[day][1][inst] = scheduleData[day][2][inst];
+  scheduleData[day][2][inst] = tmp;
+  closeModal();
+  saveSchedule();
+  const month = parseInt(monthSelect.value);
+  const year = parseInt(document.getElementById('yearInput').value);
+  renderSchedule(year, month);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+generateScheduleIfNoSave();
+</script>
+</body>
+</html>
